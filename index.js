@@ -4,11 +4,16 @@ import { Op } from 'sequelize';
 
 async function task1() {
   console.log('\n--- Задание 1 ---');
+  /*
+   * where: внутри include, так как фильтруем по связанной модели (Post).
+   * required: true, так как нужны только пользователи, у которых ЕСТЬ такие посты (INNER JOIN).
+   * order: сортируем сначала пользователей по имени, затем их посты по дате (вложенный массив).
+   */
   const users = await User.findAll({
     include: [{
       model: Post, as: 'posts',
       where: { publishedAt: { [Op.gt]: '2023-01-01' } },
-      required: true, // INNER JOIN
+      required: true,
     }],
     order: [['name', 'ASC'], [{ model: Post, as: 'posts' }, 'publishedAt', 'DESC']],
   });
@@ -17,8 +22,13 @@ async function task1() {
 
 async function task2() {
   console.log('\n--- Задание 2 ---');
+  /*
+   * required: false используется для LEFT JOIN, чтобы включить авторов без книг.
+   * where нет, так как не нужно фильтровать по связанной таблице, нужны все родители.
+   * order: сортируем только по полю родительской модели (lastName).
+   */
   const authors = await Author.findAll({
-    include: [{ model: Book, as: 'books', required: false }], // LEFT JOIN
+    include: [{ model: Book, as: 'books', required: false }],
     order: [['lastName', 'ASC']],
   });
   authors.forEach(a => console.log(`${a.lastName}: ${a.books.map(b => b.title).join(', ') || 'пусто'}`));
@@ -26,6 +36,12 @@ async function task2() {
 
 async function task3() {
   console.log('\n--- Задание 3 ---');
+  /*
+   * where: внутри include для фильтрации курсов по кредитам.
+   * required: true отсеивает студентов без подходящих курсов (INNER JOIN).
+   * order: сортируем студентов по имени, курсы — по названию.
+   * through: { attributes: [] } скрывает поля соединительной таблицы Enrollment.
+   */
   const students = await Student.findAll({
     include: [{
       model: Course, as: 'courses',
@@ -40,6 +56,11 @@ async function task3() {
 
 async function task4() {
   console.log('\n--- Задание 4 ---');
+  /*
+   * where: внутри include для фильтрации товаров по количеству.
+   * required: true оставляет только заказы, где есть хотя бы один такой товар.
+   * order: заказы по дате создания, товары внутри — по цене (вложенный массив).
+   */
   const orders = await Order.findAll({
     include: [{
       model: Item, as: 'items',
@@ -53,6 +74,12 @@ async function task4() {
 
 async function task5() {
   console.log('\n--- Задание 5 ---');
+  /*
+   * where (верхний уровень): фильтрует активных пользователей (isActive: true).
+   * where (внутри include): фильтрует посты по статусу 'published'.
+   * required: true гарантирует, что у пользователя есть хотя бы один опубликованный пост.
+   * order: пользователи по имени, посты по дате создания.
+   */
   const users = await User.findAll({
     where: { isActive: true },
     include: [{
